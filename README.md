@@ -85,11 +85,12 @@ cmake --build build
 
 ## Acknowledgements
 - 🎨 Design by [Akshay Majgaonkar](https://www.linkedin.com/in/akshay-majgaonkar/)
+- [KDAB](https://www.youtube.com/@KDABtv) for their awesome Qt learning resources
 
 ## TODO
 - Open url on double click
 - Publish on Flathub
-- Double click on macOS dock should wakeup Tokri
+- [macOS]Hide Tokri from dock or Double click on dock should wakeup Tokri
 - Add items from clipboard
 - Placeholder text and Image
 - Item count
