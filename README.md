@@ -92,6 +92,7 @@ cmake --build build
 - Open url on double click
 - Add items from clipboard
 - [macOS]Hide Tokri from dock or Double click on dock should wakeup Tokri
+- Build tokri using flatpak builder for linux
 
 - Publish on Flathub
 - Placeholder text and Image
