@@ -33,7 +33,7 @@
 
 > **Note for macOS users**
 >
-> This app is **unsigned**, so macOS will block it on first launch.
+> This app is **unsigned**, so macOS will block it.
 >
 > To run it:
 >
@@ -61,14 +61,14 @@
 
 > **Note for KDE users**
 >
-> Mouse activation gestures do not work on **native Wayland** (KDE-specific limitation).
+> Mouse shake activation does not work on **KDE Wayland**.
 >
 > Run the app under **XWayland** by disabling Wayland access:
 > - Open **Flatseal**
 > - Select the app
 > - Remove the **Wayland** permission
 >
-> This forces XWayland and restores gesture support.
+> This forces XWayland and restores mouse shake activation.
 >
 > ![](./assets/flatseal.png)
 
@@ -88,9 +88,11 @@ cmake --build build
 - [KDAB](https://www.youtube.com/@KDABtv) for their awesome Qt learning resources
 
 ## TODO
+- Fix minimize
 - Open url on double click
-- Publish on Flathub
-- [macOS]Hide Tokri from dock or Double click on dock should wakeup Tokri
 - Add items from clipboard
+- [macOS]Hide Tokri from dock or Double click on dock should wakeup Tokri
+
+- Publish on Flathub
 - Placeholder text and Image
 - Item count
