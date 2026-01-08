@@ -29,7 +29,6 @@ TokriWindow::TokriWindow(QWidget *parent)
 
     setWindowFlags(windowFlags()
                    | Qt::FramelessWindowHint
-                   | Qt::Tool
                    | Qt::WindowStaysOnTopHint);
     setAttribute(Qt::WA_TranslucentBackground);
 
