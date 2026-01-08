@@ -189,7 +189,7 @@ Ui::TokriWindow *TokriWindow::uiHandle()
 
 void TokriWindow::sleep()
 {
-    showMinimized();
+    hide();
 }
 
 void TokriWindow::wakeUp()
