@@ -209,18 +209,6 @@ void TokriWindow::wakeUp()
 
     raise();
     activateWindow();
-
-#ifdef Q_OS_WIN
-    HWND hWnd = reinterpret_cast<HWND>(winId());
-    DWORD fgThread = GetWindowThreadProcessId(GetForegroundWindow(), nullptr);
-    DWORD thisThread = GetCurrentThreadId();
-    AttachThreadInput(thisThread, fgThread, TRUE);
-    SetForegroundWindow(hWnd);
-    SetFocus(hWnd);
-    SetActiveWindow(hWnd);
-    AttachThreadInput(thisThread, fgThread, FALSE);
-    FlashWindow(hWnd, TRUE);
-#endif
 }
 
 void TokriWindow::paintEvent(QPaintEvent *)
