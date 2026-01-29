@@ -90,6 +90,5 @@ cmake --build build
 ## TODO
 - Add items from clipboard
 - [macOS]Fix ordering for latest dropped files/directories to appear on top
-- [macOS]Hide Tokri from dock or Double click on dock should wakeup Tokri
 - Build tokri using flatpak builder for linux
 - Placeholder text and Image
