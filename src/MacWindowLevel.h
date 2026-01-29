@@ -5,6 +5,7 @@
 
 namespace MacWindowLevel {
     void makeAlwaysOnTop(QWindow *w);
+    void hideFromDock();
 }
 
 #endif // MACWINDOWLEVEL_H

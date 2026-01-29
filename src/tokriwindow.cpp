@@ -254,6 +254,9 @@ void TokriWindow::init()
             // FIXME handle error
         }
     }
+#ifdef Q_OS_MAC
+    MacWindowLevel::hideFromDock();
+#endif
 }
 
 void TokriWindow::moveNearCursor()

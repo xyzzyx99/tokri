@@ -20,3 +20,12 @@ void MacWindowLevel::makeAlwaysOnTop(QWindow *w)
     [nswin setLevel:NSStatusWindowLevel];
     [nswin setHidesOnDeactivate:NO];
 }
+
+void MacWindowLevel::hideFromDock()
+{
+    NSApplication *app = NSApp;
+    if (!app) {
+        app = [NSApplication sharedApplication];
+    }
+    [app setActivationPolicy:NSApplicationActivationPolicyAccessory];
+}
