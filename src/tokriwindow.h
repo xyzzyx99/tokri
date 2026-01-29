@@ -27,15 +27,6 @@ public:
     void sleep();
     void wakeUp();
 
-    void paintEvent(QPaintEvent *);
-    void setDropping(bool status);
-
-    void resizeEvent(QResizeEvent *e);
-
-    void init();
-    void moveNearCursor();
-    void showEvent(QShowEvent *e);
-
 public slots:
     void onShakeDetect();
 
@@ -43,5 +34,13 @@ private:
     Ui::TokriWindow *ui;
     bool mDropping = false;
     CloseButton *mCloseButton;
+
+    void init();
+    void moveNearCursor();
+    void paintEvent(QPaintEvent *);
+    void resizeEvent(QResizeEvent *e);
+    void setDropping(bool status);
+    void showEvent(QShowEvent *e);
+    void openUrl();
 };
 #endif // TOKRIWINDOW_H

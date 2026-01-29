@@ -23,18 +23,13 @@ TokriWindow::TokriWindow(QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::TokriWindow)
 {
-    init();
-
     ui->setupUi(this);
 
+    init();
     setWindowFlags(windowFlags()
                    | Qt::FramelessWindowHint
                    | Qt::WindowStaysOnTopHint);
     setAttribute(Qt::WA_TranslucentBackground);
-
-    mCloseButton = new CloseButton(this);
-    mCloseButton->setParent(this);
-    mCloseButton->raise();
 
     ui->listView->setStyleSheet(R"(
         QListView {
@@ -43,24 +38,25 @@ TokriWindow::TokriWindow(QWidget *parent)
         }
     )");
 
-
-    auto placeClose = [this] {
-        const int m = 8;
-        mCloseButton->move(width() - mCloseButton->width() - m, m);
-    };
+    mCloseButton = new CloseButton(this);
+    mCloseButton->setParent(this);
+    mCloseButton->raise();
     connect(
         mCloseButton,
         &QAbstractButton::clicked,
         this,
         &TokriWindow::sleep
         );
-
+    auto placeClose = [this] {
+        const int m = 8;
+        mCloseButton->move(width() - mCloseButton->width() - m, m);
+    };
     placeClose();
+
 
     ui->listView->setVerticalScrollBar(new SleekScrollBar(Qt::Vertical, ui->listView));
     const auto delegate = new ListItemDelegate(ui->listView);
     ui->listView->setItemDelegate(delegate);
-
     ui->listView->setEditTriggers(QAbstractItemView::NoEditTriggers);
 
     connect(ui->listView, &QListView::doubleClicked,
@@ -73,6 +69,9 @@ TokriWindow::TokriWindow(QWidget *parent)
                         .value<QFileInfo>()
                         .filePath();
 
+                if (filePath.endsWith(".url.txt")){
+                    qDebug() << "Opening url";
+                }
                 QDesktopServices::openUrl(QUrl::fromLocalFile(filePath));
             });
 
@@ -82,12 +81,11 @@ TokriWindow::TokriWindow(QWidget *parent)
     ui->listView->setWrapping(true);
     ui->listView->setUniformItemSizes(true);
     ui->listView->setSpacing(8);
-
     ui->listView->setMouseTracking(true);
     ui->listView->setFocusPolicy(Qt::NoFocus);
     ui->listView->setDropIndicatorShown(false);
-
     ui->listView->setContextMenuPolicy(Qt::CustomContextMenu);
+
     connect(ui->listView, &QWidget::customContextMenuRequested, this,
             [this](const QPoint &pos) {
                 auto *view = ui->listView;
@@ -124,19 +122,19 @@ TokriWindow::TokriWindow(QWidget *parent)
                     return;
                 }
 
-                if (chosen == open && count == 1) {
+                if (count == 1 && chosen == open) {
                     QDesktopServices::openUrl(
                         QUrl::fromLocalFile(fileInfoAt(selected[0]).filePath()));
                     return;
                 }
 
-                if (chosen == reveal && count == 1) {
+                if (count == 1 && chosen == reveal) {
                     QDesktopServices::openUrl(
                         QUrl::fromLocalFile(fileInfoAt(selected[0]).absolutePath()));
                     return;
                 }
 
-                if (chosen == rename && count == 1) {
+                if (count == 1 && chosen == rename) {
                     view->edit(selected[0]);
                     return;
                 }
