@@ -6,9 +6,6 @@ HorizontalShakeDetector::HorizontalShakeDetector(QObject *parent)
 
 bool HorizontalShakeDetector::feed(int dx, uint64_t tsMs)
 {
-    constexpr int minDx = 8;
-    constexpr int maxDx = 100;
-
     // jitter
     if (std::abs(dx) < minDx)
         return false;
