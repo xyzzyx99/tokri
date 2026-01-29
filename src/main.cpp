@@ -46,29 +46,31 @@
 int main(int argc, char *argv[])
 {
     QApplication a(argc, argv);
+
     a.setPalette(ThemeProvider::theme());
 
-    QIcon icon(":/tray.png");
 
     QLocalServer server;
     TokriWindow tokriWindow;
-
     // Single Instance
-    const QString lockPath =
+    const QString lockFilePath =
         QStandardPaths::writableLocation(QStandardPaths::TempLocation)
                              + "/"
                              + StandardNames::get(StandardNames::LockFile);
-    static QLockFile lockFile(lockPath);
+    static QLockFile lockFile(lockFilePath);
     lockFile.setStaleLockTime(0);
+    QString localServerName = StandardNames::get(StandardNames::LocalServer);
+
     if (!lockFile.tryLock()) {
         QLocalSocket localSocket;
-        localSocket.connectToServer(StandardNames::get(StandardNames::LocalServer));
+        localSocket.connectToServer(localServerName);
+
         if (localSocket.waitForConnected(100)) {
             return 0;
         }
     } else {
-        server.removeServer(StandardNames::get(StandardNames::LocalServer));
-        server.listen(StandardNames::get(StandardNames::LocalServer));
+        server.removeServer(localServerName);
+        server.listen(localServerName);
 
         QObject::connect(&server, &QLocalServer::newConnection, [&]{
             auto sock = server.nextPendingConnection();
@@ -77,17 +79,8 @@ int main(int argc, char *argv[])
         });
     }
 
-    // Actions
-    // QAction *searchAction = new QAction(&w);
-    // searchAction->setShortcut(QKeySequence::Find);
-    // searchAction->setCheckable(true);
-    // searchAction->setChecked(false);
-    // w.addAction(searchAction);
-    // TokriWindow::connect(searchAction, &QAction::toggled,
-    //         [&w](bool on){
-    //             w.uiHandle()->searchBar->setVisible(on);
-    //         });
 
+    QIcon icon(":/tray.png");
     auto *tray = new QSystemTrayIcon(icon, &a);
     tray->setToolTip("Tokri - Running");
     auto *menu = new QMenu();
@@ -110,14 +103,12 @@ int main(int argc, char *argv[])
     tokriWindow.addAction(deleteAction);
 
     // View & Models
-
     DropAwareFileSystemModel *fsModel = new DropAwareFileSystemModel(&tokriWindow);
     QString rootPath = StandardPaths::getPath(StandardPaths::TokriDir);
     QModelIndex rootIndex = fsModel->setRootPath(rootPath);
 
     FSSortFilterProxy *sortFilterProxy = new FSSortFilterProxy(&tokriWindow);
     sortFilterProxy->setSourceModel(fsModel);
-
     sortFilterProxy->setDynamicSortFilter(true);
     sortFilterProxy->sort(0, Qt::DescendingOrder);
 
@@ -169,28 +160,30 @@ int main(int argc, char *argv[])
         Qt::QueuedConnection
         );
 
-    QTimer *reloadDebounce = new QTimer(&tokriWindow);
-    reloadDebounce->setSingleShot(true);
 
-    bool first = true;
+    QTimer *reloadDirectoryDebounce = new QTimer(&tokriWindow);
+    reloadDirectoryDebounce->setSingleShot(true);
+
+    bool reset = true;
 
     QObject::connect(worker, &CopyWorker::copySuccess,
-                     reloadDebounce,
-                     [&reloadDebounce, &first] {
-                         reloadDebounce->setInterval(first ? 500 : 3000);
-                         first = false;
-                         reloadDebounce->start();
+                     reloadDirectoryDebounce,
+                     [&reloadDirectoryDebounce, &reset] {
+                         reloadDirectoryDebounce->setInterval(reset ? 500 : 3000);
+                         reset = false;
+                         reloadDirectoryDebounce->start();
                      },
                      Qt::QueuedConnection);
 
-    QObject::connect(reloadDebounce, &QTimer::timeout,
+    QObject::connect(reloadDirectoryDebounce, &QTimer::timeout,
                      fsModel,
-                     [&first, &fsModel] {
-                         first = true;
+                     [&reset, &fsModel] {
+                         reset = true;
                          const QString root = fsModel->rootPath();
                          fsModel->setRootPath(QString());
                          fsModel->setRootPath(root);
                      });
+
 
     QThread* th = new QThread;
     CopyWorker::connect(th, &QThread::finished, worker, &QObject::deleteLater);
@@ -199,12 +192,6 @@ int main(int argc, char *argv[])
     worker->moveToThread(th);
     th->start();
 
-    // DropAwareFileSystemModel::connect(
-    //     w.uiHandle()->searchBar,
-    //     &QLineEdit::textChanged,
-    //     sortFilterProxy,
-    //     &FSSortFilterProxy::setSearch
-    //     );
 
     // FIXME - move this to dropaware fs model
     DropAwareFileSystemModel::connect(
@@ -228,6 +215,7 @@ int main(int argc, char *argv[])
                 }
             }
         });
+
 
     auto SleepShortcut = new QShortcut(QKeySequence("Escape"), &tokriWindow);
     SleepShortcut->setContext(Qt::WindowShortcut);
