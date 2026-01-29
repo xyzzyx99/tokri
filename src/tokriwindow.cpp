@@ -60,7 +60,7 @@ TokriWindow::TokriWindow(QWidget *parent)
     ui->listView->setEditTriggers(QAbstractItemView::NoEditTriggers);
 
     connect(ui->listView, &QListView::doubleClicked,
-            this, [](const QModelIndex &idx){
+            this, [this](const QModelIndex &idx){
                 if (!idx.isValid())
                     return;
 
@@ -68,12 +68,8 @@ TokriWindow::TokriWindow(QWidget *parent)
                     idx.data(QFileSystemModel::FileInfoRole)
                         .value<QFileInfo>()
                         .filePath();
-
-                if (filePath.endsWith(".url.txt")){
-                    qDebug() << "Opening url";
-                }
-                QDesktopServices::openUrl(QUrl::fromLocalFile(filePath));
-            });
+                openItem(filePath);
+    });
 
     ui->listView->setViewMode(QListView::IconMode);
     ui->listView->setGridSize({100, 130});
@@ -123,8 +119,8 @@ TokriWindow::TokriWindow(QWidget *parent)
                 }
 
                 if (count == 1 && chosen == open) {
-                    QDesktopServices::openUrl(
-                        QUrl::fromLocalFile(fileInfoAt(selected[0]).filePath()));
+                    QString filePath = fileInfoAt(selected[0]).filePath();
+                    openItem(filePath);
                     return;
                 }
 
@@ -292,4 +288,24 @@ void TokriWindow::showEvent(QShowEvent *e)
 #ifdef Q_OS_MAC
     MacWindowLevel::makeAlwaysOnTop(windowHandle());
 #endif
+}
+
+void TokriWindow::openItem(QString filePath) {
+    if (filePath.endsWith(".url.txt"))
+    {
+        QFile file(filePath);
+        if (file.open(QIODeviceBase::ReadOnly | QIODeviceBase::Text))
+        {
+            QTextStream in(&file);
+            QString line = in.readLine();
+            if (!line.isEmpty())
+            {
+                qDebug() << "Opening url" << line;
+                QDesktopServices::openUrl(line);
+                return;
+            }
+        }
+    }
+
+    QDesktopServices::openUrl(QUrl::fromLocalFile(filePath));
 }

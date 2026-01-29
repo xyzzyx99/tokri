@@ -41,6 +41,6 @@ private:
     void resizeEvent(QResizeEvent *e);
     void setDropping(bool status);
     void showEvent(QShowEvent *e);
-    void openUrl();
+    void openItem(QString filePath);
 };
 #endif // TOKRIWINDOW_H
