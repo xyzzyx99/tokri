@@ -50,11 +50,27 @@ void CopyWorker::copyDirectory(const QString &src)
 
 void CopyWorker::copyFile(const QString &filePath)
 {
+#if defined(Q_OS_WIN) || defined(Q_OS_LINUX)
     QFile file(filePath);
     bool copied = file.copy(FilePathProvider::nameFromPath(filePath));
     if (copied == false){
         emit copyFailed(filePath);
     }
+#endif
+
+#ifdef Q_OS_MAC
+    QString dst = FilePathProvider::nameFromPath(filePath);
+
+    QFile in(filePath);
+    QFile out(dst);
+
+    if (!in.open(QIODevice::ReadOnly) ||
+        !out.open(QIODevice::WriteOnly | QIODevice::Truncate) ||
+        out.write(in.readAll()) == -1) {
+        emit copyFailed(filePath);
+        return;
+    }
+#endif
 }
 
 void CopyWorker::saveImage(const QImage &image)
