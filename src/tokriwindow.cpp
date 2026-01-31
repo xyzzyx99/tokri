@@ -152,10 +152,14 @@ TokriWindow::TokriWindow(QWidget *parent)
 
                 if (chosen == del) {
                     for (const auto &idx : selected) {
-                        QFile f(fileInfoAt(idx).filePath());
-                        if (f.exists())
-                            f.remove();
-                    }
+                        QFileInfo fi(fileInfoAt(idx).filePath());
+                        if (!fi.exists())
+                            return;
+
+                        if (fi.isDir())
+                            QDir(fi.absoluteFilePath()).removeRecursively();
+                        else
+                            QFile::remove(fi.absoluteFilePath());                    }
                 }
             });
 
