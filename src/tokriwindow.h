@@ -42,5 +42,6 @@ private:
     void setDropping(bool status);
     void showEvent(QShowEvent *e);
     void openItem(QString filePath);
+    void renderCloseButton();
 };
 #endif // TOKRIWINDOW_H
