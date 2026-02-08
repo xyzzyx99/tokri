@@ -45,7 +45,8 @@ void CopyWorker::copyDirectory(const QString &src) {
         }
     }
 #if defined(Q_OS_MACOS)
-    QDir(dstFinal).removeRecursively();
+    if (QFileInfo::exists(dstFinal))
+        QDir(dstFinal).removeRecursively();
     QString tmpDirName = QFileInfo(dst).fileName();
     QDir tmpDir = QFileInfo(dstFinal).dir();
     tmpDir.rename(tmpDirName, QFileInfo(dstFinal).fileName());
