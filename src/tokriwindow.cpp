@@ -47,11 +47,7 @@ TokriWindow::TokriWindow(QWidget *parent)
         this,
         &TokriWindow::sleep
         );
-    auto placeClose = [this] {
-        const int m = 8;
-        mCloseButton->move(width() - mCloseButton->width() - m, m);
-    };
-    placeClose();
+    renderCloseButton();
 
 
     ui->listView->setVerticalScrollBar(new SleekScrollBar(Qt::Vertical, ui->listView));
@@ -244,8 +240,7 @@ void TokriWindow::setDropping(bool status)
 void TokriWindow::resizeEvent(QResizeEvent *e)
 {
     QMainWindow::resizeEvent(e);
-    const int m = 8;
-    mCloseButton->move(width() - mCloseButton->width() - m, m);
+    renderCloseButton();
 }
 
 void TokriWindow::init()
@@ -315,4 +310,14 @@ void TokriWindow::openItem(QString filePath) {
     }
 
     QDesktopServices::openUrl(QUrl::fromLocalFile(filePath));
+}
+
+void TokriWindow::renderCloseButton()
+{
+        const int m = 8;
+#ifdef Q_OS_MAC
+        mCloseButton->move(m, m);
+#else
+        mCloseButton->move(width() - mCloseButton->width() - m, m);
+#endif
 }

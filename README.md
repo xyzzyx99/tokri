@@ -89,6 +89,13 @@ cmake --build build
 
 ## TODO
 - Add items from clipboard
-- [macOS]Fix ordering for latest dropped files/directories to appear on top
-- Build tokri using flatpak builder for linux
 - Placeholder text and Image
+
+- [macos]move close button to top left
+- [macOS]Fix ordering for latest dropped directory to appear on top
+
+- [macos]hide from dock
+- [macos]latest copied files appear on top
+- delete directories
+- radius 8 => 16px
+- double click to open link in browser
