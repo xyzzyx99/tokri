@@ -15,37 +15,41 @@ CopyWorker::CopyWorker(QObject *parent)
     : QObject{parent}
 {}
 
-void CopyWorker::copyDirectory(const QString &src)
-{
+void CopyWorker::copyDirectory(const QString &src) {
+#if defined(Q_OS_MACOS)
+    QString dstFinal = FilePathProvider::nameFromPath(src);
+    QString dst = dstFinal + ".progress";
+#else
     QString dst = FilePathProvider::nameFromPath(src);
-    bool makePath = QDir().mkpath(dst);
-    if (makePath == false){
-        // FIXME
+#endif
+    if (!QDir().mkpath(dst)) {
         emit makePathFailed(dst);
+        return;
     }
-
-    QDirIterator it(src,
-                    QDir::Files | QDir::Dirs | QDir::NoDotAndDotDot,
-                    QDirIterator::Subdirectories);
-
+    QDirIterator it(src, QDir::Files | QDir::Dirs | QDir::NoDotAndDotDot, QDirIterator::Subdirectories);
     while (it.hasNext()) {
         it.next();
         QString rel = QDir(src).relativeFilePath(it.filePath());
         QString out = dst + "/" + rel;
-
         if (it.fileInfo().isDir()) {
-            // FIXME handle errors here
-            QDir().mkpath(out);
+            if (!QDir().mkpath(out)) {
+                emit makePathFailed(out);
+                return;
+            }
         } else {
-            // FIXME handle errors here
             QDir().mkpath(QFileInfo(out).path());
-            if (!QFile::copy(it.filePath(), out)){
-                // FIXME handle copy error
+            if (!QFile::copy(it.filePath(), out)) {
                 emit copyFailed(out);
                 return;
             }
         }
     }
+#if defined(Q_OS_MACOS)
+    QDir(dstFinal).removeRecursively();
+    QString tmpDirName = QFileInfo(dst).fileName();
+    QDir tmpDir = QFileInfo(dstFinal).dir();
+    tmpDir.rename(tmpDirName, QFileInfo(dstFinal).fileName());
+#endif
 }
 
 void CopyWorker::copyFile(const QString &filePath)
