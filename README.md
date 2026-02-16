@@ -84,9 +84,5 @@ cmake --build build
 ```
 
 ## Acknowledgements
-- 🎨 Design by [Akshay Majgaonkar](https://www.linkedin.com/in/akshay-majgaonkar/)
 - [KDAB](https://www.youtube.com/@KDABtv) for their awesome Qt learning resources
-
-## TODO
-- Add items from clipboard
-- Build tokri using flatpak builder for linux
+- 🎨 Design by [Akshay Majgaonkar](https://www.linkedin.com/in/akshay-majgaonkar/)
