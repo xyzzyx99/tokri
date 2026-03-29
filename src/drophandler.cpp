@@ -44,10 +44,10 @@ bool TextDropHandler::handleUrlDrop(const QString &urlStr)
 
             QObject::connect(getReply, &QNetworkReply::finished,
                 [getReply, urlStr]() {
-                    if (getReply->error() != QNetworkReply::NoError) {
-                        getReply->deleteLater();
-                        return;
-                    }
+                if (getReply->error() != QNetworkReply::NoError) {
+                    getReply->deleteLater();
+                    return;
+                }
                 QByteArray data = getReply->readAll();
                 getReply->deleteLater();
 
@@ -58,13 +58,13 @@ bool TextDropHandler::handleUrlDrop(const QString &urlStr)
                 file.close();
             });
 
-            } else {
-                TextFile file;
-                file.setName(FilePathProvider::nameFromUrl(urlStr) + ".url.txt");
-                file.setContent(urlStr);
-                file.save();
-            }
-        });
+        } else {
+            TextFile file;
+            file.setName(FilePathProvider::nameFromUrl(urlStr) + ".url.txt");
+            file.setContent(urlStr);
+            file.save();
+        }
+    });
 
     return true;
 }
