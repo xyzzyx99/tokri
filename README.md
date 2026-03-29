@@ -20,11 +20,11 @@
 ## Download
 
 ### Windows
-- Installer: [TokriSetup.exe](https://github.com/jarusll/tokri/releases/download/v2026.02.01/TokriSetup.exe)
-- Portable (.zip): [Tokri.zip](https://github.com/jarusll/tokri/releases/download/v2026.02.01/Tokri.zip)
+- Installer: [TokriSetup.exe](https://github.com/jarusll/tokri/releases/download/v2026.03.01/TokriSetup.exe)
+- Portable (.zip): [Tokri.zip](https://github.com/jarusll/tokri/releases/download/v2026.03.01/Tokri.zip)
 
 ### macOS
-- DMG installer: [Tokri.dmg](https://github.com/jarusll/tokri/releases/download/v2026.02.01/Tokri.dmg)
+- DMG installer: [Tokri.dmg](https://github.com/jarusll/tokri/releases/download/v2026.03.01/Tokri.dmg)
 - Install via Homebrew:
     ```zsh
     brew tap jarusll/tap
@@ -46,7 +46,7 @@
 > **System Settings → Privacy & Security → Open Anyway**
 
 ### Linux
-- Flatpak bundle: [Tokri.flatpak](https://github.com/jarusll/tokri/releases/download/v2026.02.01/Tokri.flatpak)
+- Flatpak bundle: [Tokri.flatpak](https://github.com/jarusll/tokri/releases/download/v2026.03.01/Tokri.flatpak)
 
 > **Note for Linux users**
 >
