@@ -20,6 +20,7 @@ bool TextDropHandler::handleTextDrop(const QString &text)
 
 bool TextDropHandler::handleUrlDrop(const QString &urlStr)
 {
+    thread_local QNetworkAccessManager manager;
     QNetworkRequest request((QUrl(urlStr)));
 
     auto headReply = manager.head(request);

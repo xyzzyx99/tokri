@@ -14,9 +14,6 @@ public:
     explicit TextDropHandler(QObject *parent = nullptr);
     bool handleTextDrop(const QString &text);
     bool handleUrlDrop(const QString &urlStr);
-
-private:
-    QNetworkAccessManager manager;
 };
 
 #endif // DROPHANDLER_H
