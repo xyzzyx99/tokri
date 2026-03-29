@@ -90,7 +90,7 @@ bool DropAwareFileSystemModel::dropMimeData(const QMimeData *data,
     }
 
 
-    if (data->hasUrls()) {
+    else if (data->hasUrls()) {
         bool handled = false;
 
         // FIXME cleanup
@@ -104,14 +104,14 @@ bool DropAwareFileSystemModel::dropMimeData(const QMimeData *data,
                 }
             } else {
                 emit droppedUrl(url.toString());
-                handled = true;
+                // since there can be only 1 url drop from browser
+                return true;
             }
         }
 
-        return handled;
     }
 
-    if (data->hasText()) {
+    else if (data->hasText()) {
         if (isValidHttpUrl( data->text())){
             emit droppedUrl(data->text());
             return true;
@@ -139,35 +139,6 @@ QVariant DropAwareFileSystemModel::data(const QModelIndex &index, int role) cons
     if (role == Qt::ToolTipRole){
         return fileName(index);
     }
-
-    // if (role == Qt::ToolTipRole){
-    //     const auto path = filePath(index);
-    //     QMimeDatabase mimeDb;
-    //     auto mime = mimeDb.mimeTypeForFile(path);
-    //     if (mime.inherits("text/plain")){
-    //         QFile file(path);
-    //         if (!file.open(QIODevice::ReadOnly | QIODevice::Text))
-    //             QVariant();
-
-    //         QByteArray buf = file.read(1024);
-    //         if (file.bytesAvailable() > 1024){
-    //             buf.append("...");
-    //         }
-    //         return QString::fromUtf8(buf);
-    //     } else if (mime.inherits("image/png")){
-    //         // FIXME is this even needed?
-    //         QPixmap pix(path);
-    //         QByteArray ba;
-    //         QBuffer buffer(&ba);
-    //         buffer.open(QIODevice::WriteOnly);
-    //         pix.save(&buffer, "PNG");
-    //         QString base64 = ba.toBase64();
-
-    //         return "<img src=\"data:image/png;base64," + base64 + "\" width=\"256\"/>";
-    //     } else {
-    //         return QFileSystemModel::data(index, role);
-    //     }
-    // }
 
     return QFileSystemModel::data(index, role);
 }

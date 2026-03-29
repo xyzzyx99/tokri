@@ -5,6 +5,7 @@
 #include <QObject>
 #include <QUrl>
 #include <QFile>
+#include <QNetworkAccessManager>
 
 class TextDropHandler : public QObject
 {
@@ -13,6 +14,9 @@ public:
     explicit TextDropHandler(QObject *parent = nullptr);
     bool handleTextDrop(const QString &text);
     bool handleUrlDrop(const QString &urlStr);
+
+private:
+    QNetworkAccessManager manager;
 };
 
 #endif // DROPHANDLER_H
