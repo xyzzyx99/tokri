@@ -206,29 +206,32 @@ void TokriWindow::paintEvent(QPaintEvent *)
     QPainter p(this);
     p.setRenderHint(QPainter::Antialiasing, true);
 
-    const QRectF r = QRectF(rect()).adjusted(2.0, 2.0, -2.0, -2.0);
+    // Clear the translucent backing surface before drawing the frame. This
+    // prevents partially covered antialiased pixels from accumulating.
+    p.setCompositionMode(QPainter::CompositionMode_Source);
+    p.fillRect(rect(), Qt::transparent);
+    p.setCompositionMode(QPainter::CompositionMode_SourceOver);
 
-    // background
-    p.setPen(Qt::NoPen);
-    p.setBrush(palette().color(QPalette::Window));
-    p.drawRoundedRect(r, 16.0, 16.0);
-
-    // border / drop indicator
-    QColor color = palette().color(
+    const QColor borderColor = palette().color(
         mDropping ? QPalette::Accent : QPalette::Shadow
         );
+    const qreal penWidth = mDropping ? 8.0 : 2.0;
+    const qreal inset = penWidth / 2.0;
+    const QRectF frameRect = QRectF(rect()).adjusted(
+        inset, inset, -inset, -inset
+        );
+    const qreal radius = 16.0 - inset;
 
-    QPen pen(color);
-    pen.setWidthF(2.0);
-    if (mDropping){
-        pen.setWidthF(8.0);
-    }
+    QPen pen(borderColor);
+    pen.setWidthF(penWidth);
     pen.setJoinStyle(Qt::RoundJoin);
     pen.setCapStyle(Qt::RoundCap);
 
-    p.setBrush(Qt::NoBrush);
+    // Use one rounded-rectangle operation for both the background and border.
+    // Separate fill and stroke rectangles create two antialiased corner edges.
     p.setPen(pen);
-    p.drawRoundedRect(r, 16.0, 16.0);
+    p.setBrush(palette().color(QPalette::Window));
+    p.drawRoundedRect(frameRect, radius, radius);
 }
 
 void TokriWindow::setDropping(bool status)
