@@ -4,6 +4,7 @@
 #include "standardpaths.h"
 
 #include <QBuffer>
+#include <QFileInfo>
 #include <QImage>
 #include <QImageReader>
 #include <QMimeDatabase>
@@ -11,16 +12,40 @@
 #include <QImageWriter>
 #include <QColorSpace>
 
+
+namespace {
+QString comparablePath(const QString &path)
+{
+    const QFileInfo fileInfo(path);
+    QString result = fileInfo.canonicalFilePath();
+    if (result.isEmpty())
+        result = QDir::cleanPath(fileInfo.absoluteFilePath());
+
+#ifdef Q_OS_WIN
+    result = result.toCaseFolded();
+#endif
+    return result;
+}
+
+bool isSamePath(const QString &source, const QString &destination)
+{
+    return comparablePath(source) == comparablePath(destination);
+}
+}
+
 CopyWorker::CopyWorker(QObject *parent)
     : QObject{parent}
 {}
 
 void CopyWorker::copyDirectory(const QString &src) {
+    const QString dstFinal = FilePathProvider::nameFromPath(src);
+    if (isSamePath(src, dstFinal))
+        return;
+
 #if defined(Q_OS_MACOS)
-    QString dstFinal = FilePathProvider::nameFromPath(src);
     QString dst = dstFinal + ".progress";
 #else
-    QString dst = FilePathProvider::nameFromPath(src);
+    QString dst = dstFinal;
 #endif
     if (!QDir().mkpath(dst)) {
         emit makePathFailed(dst);
@@ -55,19 +80,21 @@ void CopyWorker::copyDirectory(const QString &src) {
 
 void CopyWorker::copyFile(const QString &filePath)
 {
+    const QString destination = FilePathProvider::nameFromPath(filePath);
+    if (isSamePath(filePath, destination))
+        return;
+
 #if defined(Q_OS_WIN) || defined(Q_OS_LINUX)
     QFile file(filePath);
-    bool copied = file.copy(FilePathProvider::nameFromPath(filePath));
+    bool copied = file.copy(destination);
     if (copied == false){
         emit copyFailed(filePath);
     }
 #endif
 
 #ifdef Q_OS_MAC
-    QString dst = FilePathProvider::nameFromPath(filePath);
-
     QFile in(filePath);
-    QFile out(dst);
+    QFile out(destination);
 
     if (!in.open(QIODevice::ReadOnly) ||
         !out.open(QIODevice::WriteOnly | QIODevice::Truncate) ||

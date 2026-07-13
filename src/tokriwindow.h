@@ -35,7 +35,12 @@ private:
     bool mDropping = false;
     CloseButton *mCloseButton;
 
+    bool clipboardHasPasteableData() const;
+    void copySelectedItems();
     void init();
+    void pasteClipboard();
+    void selectAllItems();
+    void keyPressEvent(QKeyEvent *e) override;
     void moveNearCursor();
     void paintEvent(QPaintEvent *);
     void resizeEvent(QResizeEvent *e);

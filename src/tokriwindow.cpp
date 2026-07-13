@@ -3,9 +3,13 @@
 #include "standardpaths.h"
 #include "listitemdelegate.h"
 #include "closebutton.h"
+#include "dropawarefilesystemmodel.h"
+#include <QAbstractProxyModel>
 #include <QDir>
 #include <QMenu>
 #include <QDesktopServices>
+#include <QKeyEvent>
+#include <QKeySequence>
 #include <QFileSystemModel>
 #include <QApplication>
 #include <QClipboard>
@@ -14,6 +18,17 @@
 #ifdef Q_OS_WIN
 #include <windows.h>
 #endif
+
+namespace {
+DropAwareFileSystemModel *sourceFileSystemModel(QAbstractItemModel *model)
+{
+    while (auto *proxy = qobject_cast<QAbstractProxyModel *>(model))
+        model = proxy->sourceModel();
+
+    return qobject_cast<DropAwareFileSystemModel *>(model);
+}
+}
+
 
 #ifdef Q_OS_MAC
 #include "MacWindowLevel.h"
@@ -30,6 +45,7 @@ TokriWindow::TokriWindow(QWidget *parent)
                    | Qt::FramelessWindowHint
                    | Qt::WindowStaysOnTopHint);
     setAttribute(Qt::WA_TranslucentBackground);
+    setFocusPolicy(Qt::StrongFocus);
 
     ui->listView->setStyleSheet(R"(
         QListView {
@@ -90,6 +106,7 @@ TokriWindow::TokriWindow(QWidget *parent)
 
                 QAction *open = nullptr, *reveal = nullptr, *rename = nullptr;
                 QAction *copy = nullptr, *del = nullptr, *selectAll = nullptr;
+                QAction *paste = nullptr;
 
                 if (count == 1) {
                     open   = menu.addAction("&Open");
@@ -101,6 +118,8 @@ TokriWindow::TokriWindow(QWidget *parent)
                     del  = menu.addAction("&Delete");
                 }
                 selectAll = menu.addAction("Select &All");
+                if (count == 0 && clipboardHasPasteableData())
+                    paste = menu.addAction("&Paste");
 
                 QAction *chosen = menu.exec(view->viewport()->mapToGlobal(pos));
                 if (!chosen) return;
@@ -110,7 +129,12 @@ TokriWindow::TokriWindow(QWidget *parent)
                 };
 
                 if (chosen == selectAll) {
-                    view->selectAll();
+                    selectAllItems();
+                    return;
+                }
+
+                if (chosen == paste) {
+                    pasteClipboard();
                     return;
                 }
 
@@ -132,17 +156,7 @@ TokriWindow::TokriWindow(QWidget *parent)
                 }
 
                 if (chosen == copy) {
-                    QList<QUrl> urls;
-                    for (const auto &idx : selected) {
-                        const auto fi = fileInfoAt(idx);
-                        if (fi.exists())
-                            urls << QUrl::fromLocalFile(fi.absoluteFilePath());
-                    }
-                    if (!urls.isEmpty()) {
-                        auto *mime = new QMimeData;
-                        mime->setUrls(urls);
-                        QGuiApplication::clipboard()->setMimeData(mime);
-                    }
+                    copySelectedItems();
                     return;
                 }
 
@@ -172,6 +186,55 @@ TokriWindow::~TokriWindow()
     delete ui;
 }
 
+bool TokriWindow::clipboardHasPasteableData() const
+{
+    const QMimeData *mime = QGuiApplication::clipboard()->mimeData();
+    auto *model = sourceFileSystemModel(ui->listView->model());
+
+    return mime
+           && !mime->formats().isEmpty()
+           && model
+           && model->canDropMimeData(
+               mime, Qt::CopyAction, -1, -1, QModelIndex());
+}
+
+void TokriWindow::copySelectedItems()
+{
+    auto *selectionModel = ui->listView->selectionModel();
+    if (!selectionModel)
+        return;
+
+    QList<QUrl> urls;
+    for (const QModelIndex &index : selectionModel->selectedIndexes()) {
+        const QFileInfo fileInfo =
+            index.data(QFileSystemModel::FileInfoRole).value<QFileInfo>();
+        if (fileInfo.exists())
+            urls << QUrl::fromLocalFile(fileInfo.absoluteFilePath());
+    }
+
+    if (urls.isEmpty())
+        return;
+
+    auto *mime = new QMimeData;
+    mime->setUrls(urls);
+    QGuiApplication::clipboard()->setMimeData(mime);
+}
+
+void TokriWindow::pasteClipboard()
+{
+    const QMimeData *mime = QGuiApplication::clipboard()->mimeData();
+    auto *model = sourceFileSystemModel(ui->listView->model());
+    if (!mime || !model || !clipboardHasPasteableData())
+        return;
+
+    model->dropMimeData(mime, Qt::CopyAction, -1, -1, QModelIndex());
+}
+
+void TokriWindow::selectAllItems()
+{
+    ui->listView->selectAll();
+}
+
 Ui::TokriWindow *TokriWindow::uiHandle()
 {
     return ui;
@@ -199,6 +262,7 @@ void TokriWindow::wakeUp()
 
     raise();
     activateWindow();
+    setFocus(Qt::ActiveWindowFocusReason);
 }
 
 void TokriWindow::paintEvent(QPaintEvent *)
@@ -261,6 +325,29 @@ void TokriWindow::init()
 #endif
 }
 
+void TokriWindow::keyPressEvent(QKeyEvent *e)
+{
+    if (e->matches(QKeySequence::SelectAll)) {
+        selectAllItems();
+        e->accept();
+        return;
+    }
+
+    if (e->matches(QKeySequence::Copy)) {
+        copySelectedItems();
+        e->accept();
+        return;
+    }
+
+    if (e->matches(QKeySequence::Paste)) {
+        pasteClipboard();
+        e->accept();
+        return;
+    }
+
+    QMainWindow::keyPressEvent(e);
+}
+
 void TokriWindow::moveNearCursor()
 {
     const QPoint cursor = QCursor::pos();
@@ -290,6 +377,7 @@ void TokriWindow::onShakeDetect()
 void TokriWindow::showEvent(QShowEvent *e)
 {
     QWidget::showEvent(e);
+    setFocus(Qt::ActiveWindowFocusReason);
 #ifdef Q_OS_MAC
     MacWindowLevel::makeAlwaysOnTop(windowHandle());
 #endif
