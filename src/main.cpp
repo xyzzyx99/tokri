@@ -47,11 +47,14 @@ int main(int argc, char *argv[])
 {
     QApplication a(argc, argv);
 
+    QIcon appIcon(QStringLiteral(":/net.surajyadav.Tokri.png"));
+    a.setWindowIcon(appIcon);
     a.setPalette(ThemeProvider::theme());
 
 
     QLocalServer server;
     TokriWindow tokriWindow;
+    tokriWindow.setWindowIcon(appIcon);
     // Single Instance
     const QString lockFilePath =
         QStandardPaths::writableLocation(QStandardPaths::TempLocation)

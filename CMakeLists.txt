@@ -37,6 +37,7 @@ if (WIN32)
     list(APPEND WINDOWS_SOURCES
         src/windowsmouseinterceptor.h
         src/windowsmouseinterceptor.cpp
+        resources/tokri.rc
     )
 endif()
 
