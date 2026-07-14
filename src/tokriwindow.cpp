@@ -47,6 +47,11 @@ DropAwareFileSystemModel *sourceFileSystemModel(QAbstractItemModel *model)
 
 QIcon modeIcon(int mode, const QPalette &palette)
 {
+    // The original Small and Medium toolbar glyphs were assigned in the
+    // opposite order. Only swap their artwork; the actual view modes and
+    // saved mode values remain unchanged.
+    const int iconMode = mode == 0 ? 1 : (mode == 1 ? 0 : mode);
+
     QPixmap pixmap(20, 20);
     pixmap.fill(Qt::transparent);
     QPainter painter(&pixmap);
@@ -56,15 +61,16 @@ QIcon modeIcon(int mode, const QPalette &palette)
     painter.setPen(pen);
     painter.setBrush(Qt::NoBrush);
 
-    if (mode == 3) {
+    if (iconMode == 3) {
         for (int y : {4, 9, 14}) {
             painter.drawRect(QRectF(2.5, y - 1.5, 3, 3));
             painter.drawLine(QPointF(8, y), QPointF(18, y));
         }
     } else {
-        const int cells = mode == 0 ? 3 : 2;
-        const qreal size = mode == 2 ? 7.0 : (mode == 1 ? 5.5 : 4.0);
-        const qreal gap = mode == 2 ? 2.0 : 1.8;
+        const int cells = iconMode == 0 ? 3 : 2;
+        const qreal size = iconMode == 2 ? 7.0
+                                             : (iconMode == 1 ? 5.5 : 4.0);
+        const qreal gap = iconMode == 2 ? 2.0 : 1.8;
         const qreal total = cells * size + (cells - 1) * gap;
         const qreal start = (20.0 - total) / 2.0;
         for (int row = 0; row < cells; ++row) {
