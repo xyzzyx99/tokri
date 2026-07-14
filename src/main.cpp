@@ -4,6 +4,7 @@
 #include "themeprovider.h"
 #include "tokriwindow.h"
 #include "sortfilterproxy.h"
+#include "filedetailsmodel.h"
 #include "ui_tokriwindow.h"
 #include "standardnames.h"
 #include "standardpaths.h"
@@ -113,10 +114,13 @@ int main(int argc, char *argv[])
     FSSortFilterProxy *sortFilterProxy = new FSSortFilterProxy(&tokriWindow);
     sortFilterProxy->setSourceModel(fsModel);
     sortFilterProxy->setDynamicSortFilter(true);
-    sortFilterProxy->sort(0, Qt::DescendingOrder);
+    sortFilterProxy->sort(FSSortFilterProxy::AddedColumn, Qt::DescendingOrder);
 
-    tokriWindow.uiHandle()->listView->setModel(sortFilterProxy);
-    tokriWindow.uiHandle()->listView->setRootIndex(sortFilterProxy->mapFromSource(rootIndex));
+    auto *detailsModel = new FileDetailsModel(&tokriWindow);
+    detailsModel->setSourceModel(sortFilterProxy);
+    const QModelIndex proxyRoot = sortFilterProxy->mapFromSource(rootIndex);
+    detailsModel->setSourceRoot(proxyRoot);
+    tokriWindow.setFileModels(sortFilterProxy, detailsModel, proxyRoot);
 
     TextDropHandler *dropHandler = new TextDropHandler;
     DropAwareFileSystemModel::connect(
@@ -132,6 +136,9 @@ int main(int argc, char *argv[])
         dropHandler,
         &TextDropHandler::handleUrlDrop
         );
+    QObject::connect(dropHandler, &TextDropHandler::itemCreated,
+                     sortFilterProxy, &FSSortFilterProxy::recordAddedPath,
+                     Qt::QueuedConnection);
 
     CopyWorker *worker = new CopyWorker;
     CopyWorker::connect(
@@ -170,6 +177,10 @@ int main(int argc, char *argv[])
     bool reset = true;
 
     QObject::connect(worker, &CopyWorker::copySuccess,
+                     sortFilterProxy, &FSSortFilterProxy::recordAddedPath,
+                     Qt::QueuedConnection);
+
+    QObject::connect(worker, &CopyWorker::copySuccess,
                      reloadDirectoryDebounce,
                      [&reloadDirectoryDebounce, &reset] {
                          reloadDirectoryDebounce->setInterval(reset ? 500 : 3000);
@@ -180,13 +191,28 @@ int main(int argc, char *argv[])
 
     QObject::connect(reloadDirectoryDebounce, &QTimer::timeout,
                      fsModel,
-                     [&reset, &fsModel] {
+                     [&reset, fsModel, sortFilterProxy,
+                      detailsModel, &tokriWindow] {
                          reset = true;
                          const QString root = fsModel->rootPath();
                          fsModel->setRootPath(QString());
-                         fsModel->setRootPath(root);
+                         const QModelIndex sourceRoot = fsModel->setRootPath(root);
+                         const QModelIndex refreshedRoot =
+                             sortFilterProxy->mapFromSource(sourceRoot);
+                         detailsModel->setSourceRoot(refreshedRoot);
+                         tokriWindow.setIconRootIndex(refreshedRoot);
                      });
 
+
+    QObject::connect(fsModel, &QFileSystemModel::fileRenamed,
+                     sortFilterProxy,
+                     [sortFilterProxy](const QString &path,
+                                       const QString &oldName,
+                                       const QString &newName) {
+        const QDir directory(path);
+        sortFilterProxy->renameAddedPath(
+            directory.filePath(oldName), directory.filePath(newName));
+    });
 
     QThread* th = new QThread;
     CopyWorker::connect(th, &QThread::finished, worker, &QObject::deleteLater);
@@ -196,28 +222,9 @@ int main(int argc, char *argv[])
     th->start();
 
 
-    // FIXME - move this to dropaware fs model
-    DropAwareFileSystemModel::connect(
-        deleteAction,
-        &QAction::triggered,
-        tokriWindow.uiHandle()->listView,
-        [&tokriWindow](){
-            auto selectionModel = tokriWindow.uiHandle()->listView->selectionModel();
-            QModelIndexList indexes = selectionModel->selectedIndexes();
-            for (const QModelIndex &index : selectionModel->selectedIndexes()) {
-                if (!index.isValid())
-                    continue;
+    QObject::connect(deleteAction, &QAction::triggered,
+                     &tokriWindow, &TokriWindow::deleteSelectedItems);
 
-                QFileInfo fi = index.data(QFileSystemModel::FileInfoRole).value<QFileInfo>();
-                const QString path = fi.filePath();
-
-                if (fi.isDir()) {
-                    QDir(path).removeRecursively();
-                } else {
-                    QFile(path).moveToTrash();
-                }
-            }
-        });
 
 
     auto SleepShortcut = new QShortcut(QKeySequence("Escape"), &tokriWindow);

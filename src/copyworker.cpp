@@ -76,6 +76,7 @@ void CopyWorker::copyDirectory(const QString &src) {
     QDir tmpDir = QFileInfo(dstFinal).dir();
     tmpDir.rename(tmpDirName, QFileInfo(dstFinal).fileName());
 #endif
+    emit copySuccess(dstFinal);
 }
 
 void CopyWorker::copyFile(const QString &filePath)
@@ -89,6 +90,7 @@ void CopyWorker::copyFile(const QString &filePath)
     bool copied = file.copy(destination);
     if (copied == false){
         emit copyFailed(filePath);
+        return;
     }
 #endif
 
@@ -103,6 +105,7 @@ void CopyWorker::copyFile(const QString &filePath)
         return;
     }
 #endif
+    emit copySuccess(destination);
 }
 
 void CopyWorker::saveImage(const QImage &image)

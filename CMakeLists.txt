@@ -62,6 +62,7 @@ if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
         src/filepathprovider.h src/filepathprovider.cpp
         src/copyworker.h src/copyworker.cpp
         src/sortfilterproxy.h src/sortfilterproxy.cpp
+        src/filedetailsmodel.h src/filedetailsmodel.cpp
         src/nointernaldraglistview.h src/nointernaldraglistview.cpp
         src/standardnames.h
         src/horizontalshakedetector.h src/horizontalshakedetector.cpp

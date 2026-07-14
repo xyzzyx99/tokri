@@ -14,6 +14,9 @@ public:
     explicit TextDropHandler(QObject *parent = nullptr);
     bool handleTextDrop(const QString &text);
     bool handleUrlDrop(const QString &urlStr);
+
+signals:
+    void itemCreated(const QString &path);
 };
 
 #endif // DROPHANDLER_H

@@ -7,14 +7,22 @@
 #include <QApplication>
 
 namespace {
-constexpr int iconPx = 90;
 constexpr int gapPx = 6;
 constexpr int iconTextGap = 4;
 constexpr int textBottomPadPx = 6;
 constexpr int textHorzPadPx = 4;
 }
 
-ListItemDelegate::ListItemDelegate() {}
+ListItemDelegate::ListItemDelegate(QObject *parent)
+    : QStyledItemDelegate(parent)
+{}
+
+void ListItemDelegate::setIconExtent(int pixels)
+{
+    if (mIconExtent == pixels)
+        return;
+    mIconExtent = pixels;
+}
 
 QSize ListItemDelegate::sizeHint(const QStyleOptionViewItem &opt,
                                  const QModelIndex &) const
@@ -23,8 +31,8 @@ QSize ListItemDelegate::sizeHint(const QStyleOptionViewItem &opt,
     const int textH = fm.ascent() + fm.descent() + textBottomPadPx;
 
     return QSize(
-        iconPx,
-        gapPx + iconPx + iconTextGap + textH
+        mIconExtent,
+        gapPx + mIconExtent + iconTextGap + textH
         );
 }
 
@@ -54,9 +62,9 @@ void ListItemDelegate::paint(QPainter *p,
 
     // icon
     const QRect iconRect(
-        r.center().x() - iconPx / 2,
+        r.center().x() - mIconExtent / 2,
         r.top() + gapPx,
-        iconPx, iconPx);
+        mIconExtent, mIconExtent);
 
     static ThumbnailProvider provider;
     provider.iconForFile(

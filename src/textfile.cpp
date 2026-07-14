@@ -1,5 +1,6 @@
 #include "textfile.h"
 #include "filepathprovider.h"
+#include <QFileInfo>
 
 TextFile::TextFile(QObject *parent)
     : QObject{parent}
@@ -15,7 +16,7 @@ void TextFile::setContent(QString content)
     mContents = content;
 }
 
-void TextFile::save()
+QString TextFile::save()
 {
     QFile file;
     if (mName.length() > 0){
@@ -23,9 +24,13 @@ void TextFile::save()
     } else {
         file.setFileName(FilePathProvider::nameFromText(mContents));
     }
-    if (file.open(QIODevice::NewOnly | QIODevice::WriteOnly | QIODevice::Text)) {
+    const bool opened = file.open(
+        QIODevice::NewOnly | QIODevice::WriteOnly | QIODevice::Text);
+    if (opened) {
         QTextStream out(&file);
         out << mContents;
     }
+    const QString savedPath = file.fileName();
     file.close();
+    return opened && QFileInfo::exists(savedPath) ? savedPath : QString();
 }

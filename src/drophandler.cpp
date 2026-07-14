@@ -14,8 +14,10 @@ bool TextDropHandler::handleTextDrop(const QString &text)
 {
     TextFile file;
     file.setContent(text);
-    file.save();
-    return true;
+    const QString path = file.save();
+    if (!path.isEmpty())
+        emit itemCreated(path);
+    return !path.isEmpty();
 }
 
 bool TextDropHandler::handleUrlDrop(const QString &urlStr)
@@ -33,7 +35,9 @@ bool TextDropHandler::handleUrlDrop(const QString &urlStr)
             TextFile file;
             file.setName(FilePathProvider::nameFromUrl(urlStr) + ".url.txt");
             file.setContent(urlStr);
-            file.save();
+            const QString path = file.save();
+            if (!path.isEmpty())
+                emit itemCreated(path);
             return;
         }
 
@@ -44,7 +48,7 @@ bool TextDropHandler::handleUrlDrop(const QString &urlStr)
             auto getReply = manager.get(request);
 
             QObject::connect(getReply, &QNetworkReply::finished,
-                [getReply, urlStr]() {
+                [this, getReply, urlStr]() {
                 if (getReply->error() != QNetworkReply::NoError) {
                     getReply->deleteLater();
                     return;
@@ -56,14 +60,18 @@ bool TextDropHandler::handleUrlDrop(const QString &urlStr)
                 if (!file.open(QIODevice::WriteOnly)) return;
 
                 file.write(data);
+                const QString path = file.fileName();
                 file.close();
+                emit itemCreated(path);
             });
 
         } else {
             TextFile file;
             file.setName(FilePathProvider::nameFromUrl(urlStr) + ".url.txt");
             file.setContent(urlStr);
-            file.save();
+            const QString path = file.save();
+            if (!path.isEmpty())
+                emit itemCreated(path);
         }
     });
 
