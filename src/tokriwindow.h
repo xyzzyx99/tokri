@@ -3,6 +3,7 @@
 
 #include "closebutton.h"
 
+#include <QByteArray>
 #include <QDragEnterEvent>
 #include <QDragMoveEvent>
 #include <QListView>
@@ -83,6 +84,8 @@ private:
     QStackedWidget *mViewStack = nullptr;
     QWidget *mModeBar = nullptr;
     QActionGroup *mModeActions = nullptr;
+    QByteArray mDetailsHeaderState;
+    bool mRestoringDetailsHeader = false;
     ViewMode mViewMode = ViewMode::MediumIcons;
 };
 #endif // TOKRIWINDOW_H

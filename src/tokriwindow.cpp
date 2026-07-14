@@ -287,6 +287,10 @@ void TokriWindow::configureDetailsView()
     mDetailsView->setSortingEnabled(true);
     mDetailsView->setIconSize(QSize(20, 20));
     mDetailsView->header()->setSectionsMovable(true);
+    // QTreeView keeps its first column fixed by default even when the other
+    // sections are movable. Details is a flat list, so every column should be
+    // movable just like in Explorer.
+    mDetailsView->header()->setFirstSectionMovable(true);
     mDetailsView->header()->setSectionsClickable(true);
     mDetailsView->header()->setStretchLastSection(false);
     mDetailsView->header()->setSortIndicatorShown(true);
@@ -327,6 +331,51 @@ void TokriWindow::setFileModels(QAbstractItemModel *iconModel,
         QStringLiteral("View/DetailsHeader")).toByteArray();
     if (!state.isEmpty())
         header->restoreState(state);
+
+    // restoreState() can load a state saved before the first section was made
+    // movable, so enforce this after restoring the state as well.
+    header->setSectionsMovable(true);
+    header->setFirstSectionMovable(true);
+    mDetailsHeaderState = header->saveState();
+
+    auto saveHeaderState = [this, header] {
+        if (mRestoringDetailsHeader)
+            return;
+        mDetailsHeaderState = header->saveState();
+        QSettings settings(QStringLiteral("Tokri"), QStringLiteral("Tokri"));
+        settings.setValue(QStringLiteral("View/DetailsHeader"),
+                          mDetailsHeaderState);
+    };
+    connect(header, &QHeaderView::sectionMoved,
+            this, [saveHeaderState](int, int, int) { saveHeaderState(); });
+    connect(header, &QHeaderView::sectionResized,
+            this, [saveHeaderState](int, int, int) { saveHeaderState(); });
+    connect(header, &QHeaderView::sortIndicatorChanged,
+            this, [saveHeaderState](int, Qt::SortOrder) {
+        saveHeaderState();
+    });
+
+    // FileDetailsModel currently uses model resets when the source is sorted
+    // or refreshed. QHeaderView may return to logical column order during a
+    // reset, so restore the user's visual order after the view has processed
+    // the reset.
+    connect(detailsModel, &QAbstractItemModel::modelAboutToBeReset,
+            this, [this, header] {
+        if (!mRestoringDetailsHeader)
+            mDetailsHeaderState = header->saveState();
+    });
+    connect(detailsModel, &QAbstractItemModel::modelReset,
+            this, [this, header] {
+        if (mRestoringDetailsHeader || mDetailsHeaderState.isEmpty())
+            return;
+        mRestoringDetailsHeader = true;
+        QTimer::singleShot(0, this, [this, header] {
+            header->restoreState(mDetailsHeaderState);
+            header->setSectionsMovable(true);
+            header->setFirstSectionMovable(true);
+            mRestoringDetailsHeader = false;
+        });
+    });
 
     int sortSection = header->sortIndicatorSection();
     if (sortSection < 0)
