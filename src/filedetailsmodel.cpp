@@ -201,7 +201,8 @@ QVariant FileDetailsModel::data(const QModelIndex &index, int role) const
 
     if (role == Qt::TextAlignmentRole
         && index.column() == FSSortFilterProxy::SizeColumn)
-        return Qt::AlignRight | Qt::AlignVCenter;
+        return QVariant::fromValue(
+            Qt::Alignment(Qt::AlignRight | Qt::AlignVCenter));
 
     if (role == Qt::ToolTipRole)
         return fileInfo.absoluteFilePath();
