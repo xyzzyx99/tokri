@@ -18,6 +18,7 @@ protected:
     void dragMoveEvent(QDragMoveEvent *e) override;
     void dragLeaveEvent(QDragLeaveEvent *e) override;
     void dropEvent(QDropEvent *e) override;
+    void mousePressEvent(QMouseEvent *e) override;
     void paintEvent(QPaintEvent *e) override;
 signals:
     void dropping(bool status);

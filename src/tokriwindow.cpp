@@ -173,6 +173,31 @@ protected:
         QTreeView::dropEvent(event);
     }
 
+    void mousePressEvent(QMouseEvent *event) override
+    {
+        QItemSelectionModel *selection = selectionModel();
+        const QModelIndex clicked = indexAt(event->position().toPoint());
+        const bool preserveMultipleSelection =
+            event->button() == Qt::RightButton
+            && clicked.isValid()
+            && selection
+            && selection->isSelected(clicked)
+            && selection->selectedRows(0).size() > 1;
+
+        if (!preserveMultipleSelection) {
+            QTreeView::mousePressEvent(event);
+            return;
+        }
+
+        const QItemSelection savedSelection = selection->selection();
+        QTreeView::mousePressEvent(event);
+        selection->select(savedSelection,
+                          QItemSelectionModel::ClearAndSelect
+                              | QItemSelectionModel::Rows);
+        selection->setCurrentIndex(clicked.siblingAtColumn(0),
+                                   QItemSelectionModel::NoUpdate);
+    }
+
     void paintEvent(QPaintEvent *event) override
     {
         QTreeView::paintEvent(event);
