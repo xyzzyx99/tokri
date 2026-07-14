@@ -25,6 +25,7 @@
 #include <QStackedWidget>
 #include <QStyle>
 #include <QToolButton>
+#include <QTimer>
 #include <QTreeView>
 
 #include <functional>
