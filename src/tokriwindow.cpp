@@ -20,6 +20,7 @@
 #include <QKeyEvent>
 #include <QKeySequence>
 #include <QMenu>
+#include <QMouseEvent>
 #include <QMimeData>
 #include <QSettings>
 #include <QStackedWidget>
@@ -27,6 +28,7 @@
 #include <QToolButton>
 #include <QTimer>
 #include <QTreeView>
+#include <QWindow>
 
 #include <functional>
 
@@ -76,6 +78,36 @@ QIcon modeIcon(int mode, const QPalette &palette)
     }
     return QIcon(pixmap);
 }
+
+class ResizeHandle final : public QWidget
+{
+public:
+    ResizeHandle(Qt::Edges edges, Qt::CursorShape cursor,
+                 QWidget *parent = nullptr)
+        : QWidget(parent)
+        , mEdges(edges)
+    {
+        setCursor(cursor);
+        setAttribute(Qt::WA_NoSystemBackground);
+    }
+
+protected:
+    void mousePressEvent(QMouseEvent *event) override
+    {
+        if (event->button() == Qt::LeftButton) {
+            if (QWindow *handle = window()->windowHandle()) {
+                if (handle->startSystemResize(mEdges)) {
+                    event->accept();
+                    return;
+                }
+            }
+        }
+        QWidget::mousePressEvent(event);
+    }
+
+private:
+    Qt::Edges mEdges;
+};
 
 class DropTreeView final : public QTreeView
 {
@@ -170,7 +202,14 @@ TokriWindow::TokriWindow(QWidget *parent)
             this, &TokriWindow::sleep);
     renderCloseButton();
 
+    setMinimumSize(260, 200);
+    createResizeHandles();
+
     QSettings settings(QStringLiteral("Tokri"), QStringLiteral("Tokri"));
+    const QSize savedSize = settings.value(
+        QStringLiteral("Window/Size")).toSize();
+    if (savedSize.isValid())
+        resize(savedSize.expandedTo(minimumSize()));
     const int savedMode = settings.value(
         QStringLiteral("View/Mode"),
         static_cast<int>(ViewMode::MediumIcons)).toInt();
@@ -184,6 +223,7 @@ TokriWindow::~TokriWindow()
     QSettings settings(QStringLiteral("Tokri"), QStringLiteral("Tokri"));
     settings.setValue(QStringLiteral("View/Mode"),
                       static_cast<int>(mViewMode));
+    settings.setValue(QStringLiteral("Window/Size"), size());
     if (mDetailsView)
         settings.setValue(QStringLiteral("View/DetailsHeader"),
                           mDetailsView->header()->saveState());
@@ -636,6 +676,61 @@ void TokriWindow::resizeEvent(QResizeEvent *event)
 {
     QMainWindow::resizeEvent(event);
     renderCloseButton();
+    updateResizeHandles();
+}
+
+void TokriWindow::createResizeHandles()
+{
+    auto addHandle = [this](Qt::Edges edges, Qt::CursorShape cursor) {
+        auto *handle = new ResizeHandle(edges, cursor, this);
+        mResizeHandles.append(handle);
+    };
+
+    addHandle(Qt::LeftEdge, Qt::SizeHorCursor);
+    addHandle(Qt::RightEdge, Qt::SizeHorCursor);
+    addHandle(Qt::TopEdge, Qt::SizeVerCursor);
+    addHandle(Qt::BottomEdge, Qt::SizeVerCursor);
+    addHandle(Qt::TopEdge | Qt::LeftEdge, Qt::SizeFDiagCursor);
+    addHandle(Qt::TopEdge | Qt::RightEdge, Qt::SizeBDiagCursor);
+    addHandle(Qt::BottomEdge | Qt::LeftEdge, Qt::SizeBDiagCursor);
+    addHandle(Qt::BottomEdge | Qt::RightEdge, Qt::SizeFDiagCursor);
+
+    updateResizeHandles();
+}
+
+void TokriWindow::updateResizeHandles()
+{
+    if (mResizeHandles.size() != 8)
+        return;
+
+    constexpr int edgeThickness = 6;
+    constexpr int cornerExtent = 14;
+    const int middleWidth = qMax(0, width() - 2 * cornerExtent);
+    const int middleHeight = qMax(0, height() - 2 * cornerExtent);
+
+    const QRect geometries[] = {
+        QRect(0, cornerExtent, edgeThickness, middleHeight),
+        QRect(width() - edgeThickness, cornerExtent,
+              edgeThickness, middleHeight),
+        QRect(cornerExtent, 0, middleWidth, edgeThickness),
+        QRect(cornerExtent, height() - edgeThickness,
+              middleWidth, edgeThickness),
+        QRect(0, 0, cornerExtent, cornerExtent),
+        QRect(width() - cornerExtent, 0,
+              cornerExtent, cornerExtent),
+        QRect(0, height() - cornerExtent,
+              cornerExtent, cornerExtent),
+        QRect(width() - cornerExtent, height() - cornerExtent,
+              cornerExtent, cornerExtent)
+    };
+
+    for (int i = 0; i < mResizeHandles.size(); ++i) {
+        mResizeHandles[i]->setGeometry(geometries[i]);
+        mResizeHandles[i]->raise();
+    }
+
+    if (mCloseButton)
+        mCloseButton->raise();
 }
 
 void TokriWindow::init()

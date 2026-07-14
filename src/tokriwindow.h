@@ -10,6 +10,7 @@
 #include <QMainWindow>
 #include <QMimeData>
 #include <QPainter>
+#include <QVector>
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class TokriWindow; }
@@ -60,6 +61,7 @@ private:
     void configureDetailsView();
     void configureIconView();
     void copySelectedItems();
+    void createResizeHandles();
     void createModeBar();
     void init();
     void keyPressEvent(QKeyEvent *e) override;
@@ -68,6 +70,7 @@ private:
     void paintEvent(QPaintEvent *) override;
     void pasteClipboard();
     void renderCloseButton();
+    void updateResizeHandles();
     void resizeEvent(QResizeEvent *e) override;
     void selectAllItems();
     QModelIndexList selectedRows() const;
@@ -85,6 +88,7 @@ private:
     QWidget *mModeBar = nullptr;
     QActionGroup *mModeActions = nullptr;
     QByteArray mDetailsHeaderState;
+    QVector<QWidget *> mResizeHandles;
     bool mRestoringDetailsHeader = false;
     ViewMode mViewMode = ViewMode::MediumIcons;
 };
