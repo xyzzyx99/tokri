@@ -2,7 +2,7 @@
 #define THUMBNAILPROVIDER_H
 
 #include <QObject>
-#include <QIcon>
+#include <QPixmap>
 #include <QSize>
 #include <QFileInfo>
 #include <QMimeDatabase>
@@ -14,14 +14,17 @@ class ThumbnailProvider : public QObject
     Q_OBJECT
 public:
     explicit ThumbnailProvider(QObject *parent = nullptr);
-    QIcon iconForFile(const QFileInfo &fi, const QSize &size) const;
+    QPixmap pixmapForFile(const QFileInfo &fi, const QSize &size) const;
 
 private:
-    QString makeKey(const QFileInfo &fi) const;
-    QIcon textPreviewIcon(const QFileInfo &fi, const QSize &size) const;
-    QIcon imagePreviewIcon(const QFileInfo &fi, const QSize &size) const;
+    QString makeKey(const QFileInfo &fi, const QSize &size) const;
+    QPixmap fallbackPixmap(const QFileInfo &fi, const QSize &size) const;
+    QPixmap textPreviewPixmap(const QFileInfo &fi,
+                              const QSize &size) const;
+    QPixmap imagePreviewPixmap(const QFileInfo &fi,
+                               const QSize &size) const;
 
-    mutable QCache<QString, QIcon> cache{256};
+    mutable QCache<QString, QPixmap> cache{256};
     QMimeDatabase db;
     QFileIconProvider iconProvider;
 };

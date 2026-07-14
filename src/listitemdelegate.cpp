@@ -67,10 +67,13 @@ void ListItemDelegate::paint(QPainter *p,
         mIconExtent, mIconExtent);
 
     static ThumbnailProvider provider;
-    provider.iconForFile(
-                idx.data(QFileSystemModel::FileInfoRole).value<QFileInfo>(),
-                iconRect.size())
-        .paint(p, iconRect, Qt::AlignCenter);
+    const QPixmap pixmap = provider.pixmapForFile(
+        idx.data(QFileSystemModel::FileInfoRole).value<QFileInfo>(),
+        iconRect.size());
+    if (!pixmap.isNull()) {
+        p->setRenderHint(QPainter::SmoothPixmapTransform, true);
+        p->drawPixmap(iconRect, pixmap, pixmap.rect());
+    }
 
     // text
     const QFontMetrics fm(opt.font);
