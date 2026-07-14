@@ -17,6 +17,7 @@
 #include <QHeaderView>
 #include <QIcon>
 #include <QHBoxLayout>
+#include <QItemSelectionModel>
 #include <QKeyEvent>
 #include <QKeySequence>
 #include <QMenu>
@@ -43,6 +44,23 @@ DropAwareFileSystemModel *sourceFileSystemModel(QAbstractItemModel *model)
         model = proxy->sourceModel();
 
     return qobject_cast<DropAwareFileSystemModel *>(model);
+}
+
+QModelIndexList selectedFileIndexes(QAbstractItemView *view)
+{
+    QModelIndexList rows;
+    if (!view || !view->selectionModel())
+        return rows;
+
+    // QListView selects items while the Details QTreeView selects complete
+    // rows. Normalize both forms to one index per file at column zero.
+    const QModelIndexList indexes = view->selectionModel()->selectedIndexes();
+    for (const QModelIndex &index : indexes) {
+        const QModelIndex rowIndex = index.siblingAtColumn(0);
+        if (rowIndex.isValid() && !rows.contains(rowIndex))
+            rows.append(rowIndex);
+    }
+    return rows;
 }
 
 QIcon modeIcon(int mode, const QPalette &palette)
@@ -445,10 +463,7 @@ QAbstractItemView *TokriWindow::activeView() const
 
 QModelIndexList TokriWindow::selectedRows() const
 {
-    auto *view = activeView();
-    return view && view->selectionModel()
-               ? view->selectionModel()->selectedRows(0)
-               : QModelIndexList();
+    return selectedFileIndexes(activeView());
 }
 
 void TokriWindow::setViewMode(ViewMode mode)
@@ -504,9 +519,22 @@ QAction *TokriWindow::addViewModeMenu(QMenu *menu)
 
 void TokriWindow::showContextMenu(QAbstractItemView *view, const QPoint &pos)
 {
-    const QModelIndexList selected = view->selectionModel()
-                                         ? view->selectionModel()->selectedRows(0)
-                                         : QModelIndexList();
+    QItemSelectionModel *selection = view->selectionModel();
+    const QModelIndex clicked = view->indexAt(pos);
+
+    // A custom context menu does not reliably select the item under the
+    // pointer. Select it first so an item right-click receives the original
+    // Open/Reveal/Rename/Copy/Delete menu instead of the empty-area menu.
+    if (clicked.isValid() && selection && !selection->isSelected(clicked)) {
+        QItemSelectionModel::SelectionFlags flags =
+            QItemSelectionModel::ClearAndSelect;
+        if (view->selectionBehavior() == QAbstractItemView::SelectRows)
+            flags |= QItemSelectionModel::Rows;
+        selection->select(clicked, flags);
+        view->setCurrentIndex(clicked);
+    }
+
+    const QModelIndexList selected = selectedFileIndexes(view);
     const int count = selected.size();
 
     QMenu menu;
