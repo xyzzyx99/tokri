@@ -3,6 +3,7 @@
 #include <QFile>
 #include <QGuiApplication>
 #include <QIcon>
+#include <QImage>
 #include <QPainter>
 #include <QPalette>
 #include <QTextStream>
@@ -77,18 +78,43 @@ QPixmap ThumbnailProvider::fallbackPixmap(const QFileInfo &fi,
     if (source.isNull())
         return {};
 
-    // QIcon deliberately avoids enlarging a small native icon. For the icon
-    // modes that leaves a 16/32-pixel image inside a much larger item block.
-    // Scale it explicitly onto an exact-size transparent canvas instead.
-    const QPixmap scaled = source.scaled(
+    // A native Windows icon can have a device-pixel ratio greater than 1.
+    // Scaling that pixmap directly preserves the ratio, so a 96-pixel result
+    // with DPR 2 is painted as only 48 logical pixels. It also places that
+    // smaller image at the top-left of the destination canvas. Convert to a
+    // DPR-1 image first, then remove transparent shell-icon padding before
+    // performing the final centered scale.
+    QImage image = source.toImage().convertToFormat(QImage::Format_ARGB32);
+    image.setDevicePixelRatio(1.0);
+
+    QRect visibleBounds;
+    for (int y = 0; y < image.height(); ++y) {
+        const QRgb *line = reinterpret_cast<const QRgb *>(
+            image.constScanLine(y));
+        for (int x = 0; x < image.width(); ++x) {
+            if (qAlpha(line[x]) <= 4)
+                continue;
+            const QRect pixelRect(x, y, 1, 1);
+            visibleBounds = visibleBounds.isNull()
+                                ? pixelRect
+                                : visibleBounds.united(pixelRect);
+        }
+    }
+
+    if (!visibleBounds.isNull())
+        image = image.copy(visibleBounds);
+
+    const QImage scaled = image.scaled(
         size, Qt::KeepAspectRatio, Qt::SmoothTransformation);
 
     QPixmap canvas(size);
     canvas.fill(Qt::transparent);
     QPainter painter(&canvas);
-    const QPoint topLeft((canvas.width() - scaled.width()) / 2,
-                         (canvas.height() - scaled.height()) / 2);
-    painter.drawPixmap(topLeft, scaled);
+    const QRect target(
+        (canvas.width() - scaled.width()) / 2,
+        (canvas.height() - scaled.height()) / 2,
+        scaled.width(), scaled.height());
+    painter.drawImage(target, scaled);
     return canvas;
 }
 
