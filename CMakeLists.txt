@@ -146,6 +146,33 @@ target_link_libraries(Tokri PRIVATE Qt${QT_VERSION_MAJOR}::Network)
 target_link_libraries(Tokri PRIVATE Qt${QT_VERSION_MAJOR}::Widgets)
 
 target_include_directories(Tokri PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src)
+
+# Maximum-speed Release optimizations for the MSVC Windows build.
+# Disable AVX2 for older CPUs with -DTOKRI_ENABLE_AVX2=OFF.
+option(TOKRI_ENABLE_AVX2 "Enable AVX2 code generation for MSVC Release builds" ON)
+
+if(MSVC)
+    target_compile_options(Tokri PRIVATE
+        $<$<CONFIG:Release>:/O2>
+        $<$<CONFIG:Release>:/Oi>
+        $<$<CONFIG:Release>:/GL>
+        $<$<CONFIG:Release>:/Gy>
+        $<$<CONFIG:Release>:/Gw>
+    )
+
+    if(TOKRI_ENABLE_AVX2)
+        target_compile_options(Tokri PRIVATE
+            $<$<CONFIG:Release>:/arch:AVX2>
+        )
+    endif()
+
+    target_link_options(Tokri PRIVATE
+        $<$<CONFIG:Release>:/LTCG>
+        $<$<CONFIG:Release>:/OPT:REF>
+        $<$<CONFIG:Release>:/OPT:ICF>
+    )
+endif()
+
 # include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 
 if(UNIX AND NOT APPLE)
